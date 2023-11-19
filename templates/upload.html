@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Upload with Flask</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css"
+      type="text/css"
+    />
+    <style>
+      #drop-zone {
+        border: 2px dashed #ccc;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.3s ease-in-out,
+          background-color 0.3s ease-in-out;
+        position: relative; /* Tambahkan property ini */
+      }
+
+      #file-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        opacity: 0; /* Sembunyikan tombol input asli */
+      }
+
+      #drop-zone.hover {
+        border-color: #007bff;
+        background-color: #f0f8ff; /* Warna latar ketika ada file yang akan di-drop */
+      }
+
+      #file-list {
+        margin-top: 20px;
+      }
+
+      .uploading,
+      .uploaded {
+        font-size: 18px;
+        font-weight: bold;
+        margin-top: 10px;
+        animation: pulse 1s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.5;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.5;
+        }
+      }
+
+      #choose-file-btn {
+        background-color: #007bff;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      #next-btn {
+        display: none; /* Sembunyikan tombol Next secara default */
+        background-color: #28a745;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      #model-dropdown {
+        display: none; /* Sembunyikan dropdown model secara default */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5">
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Upload Your File</h5>
+          <div
+            class="drop-zone"
+            id="drop-zone"
+            ondragenter="dragEnter(event)"
+            ondragleave="dragLeave(event)"
+            ondragover="dragOver(event)"
+            ondrop="drop(event)"
+          >
+            <p class="text-center">Drag & Drop or</p>
+            <label for="file-input" id="choose-file-btn">Choose File</label>
+            <input type="file" id="file-input" />
+            <div id="file-list"></div>
+          </div>
+          <div style="text-align: center">
+            <select id="model-dropdown">
+              <option value="model1">Model 1</option>
+              <option value="model2">Model 2</option>
+              <!-- Tambahkan opsi model sesuai kebutuhan -->
+            </select>
+            <button id="next-btn" onclick="processFiles()">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+      var droppedFiles = [];
+      function drop(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        var files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
+
+        if (files.length > 0) {
+          droppedFiles = files;
+          handleFiles(files);
+        }
+      }
+
+      function handleFiles(files) {
+        var fileList = $("#file-list");
+        fileList.empty();
+
+        $.each(files, function (index, file) {
+          fileList.append('<div class="file">' + file.name + "</div>");
+        });
+
+        // Simulate file upload with a delay (for animation purpose)
+        fileList.append('<div class="uploading">Uploading...</div>');
+
+        // Anda dapat menghapus simulasi ini dan langsung memanggil showNextButton() jika diperlukan
+        setTimeout(function () {
+          fileList.empty();
+          fileList.append(
+            '<div class="uploaded">File(s) uploaded successfully!</div>'
+          );
+          // Tampilkan tombol Next setelah file berhasil diupload
+          showNextButton();
+        }, 3000);
+      }
+
+      function dragEnter(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $("#drop-zone").addClass("hover");
+      }
+
+      function dragLeave(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        $("#drop-zone").removeClass("hover");
+      }
+
+      function dragOver(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
+      function showNextButton() {
+        $("#next-btn").show();
+        $("#model-dropdown").show();
+      }
+
+      function processFiles() {
+        // Dapatkan file yang berhasil diupload
+        // var files = $("#file-input")[0].files;
+        var files =
+          droppedFiles.length > 0 ? droppedFiles : $("#file-input")[0].files;
+
+        // Buat FormData objek untuk mengirim file ke server
+        var formData = new FormData();
+        for (var i = 0; i < files.length; i++) {
+          formData.append("files", files[i]);
+        }
+
+        // Kirim file ke server menggunakan AJAX
+        $.ajax({
+          url: "/upload", // Ganti dengan endpoint server yang sesuai
+          type: "POST",
+          data: formData,
+          contentType: false,
+          processData: false,
+          success: function (response) {
+            console.log(response);
+            // Implementasikan logika untuk menanggapi respons dari server
+            // Contoh: Tampilkan pesan sukses atau jalankan langkah berikutnya
+          },
+          error: function (error) {
+            console.error(error);
+            // Implementasikan logika untuk menanggapi kesalahan dari server
+          },
+        });
+      }
+
+      $(document).ready(function () {
+        var dropZone = $("#drop-zone");
+        var fileInput = $("#file-input");
+
+        dropZone.on("drop", function (e) {
+          dropZone.removeClass("hover");
+          var files = e.originalEvent.dataTransfer.files;
+          handleFiles(files);
+        });
+
+        fileInput.change(function () {
+          var files = this.files;
+          handleFiles(files);
+        });
+      });
+    </script>
+  </body>
+</html>
